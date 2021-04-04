@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # Mac OS Trash file
 .DS_Store
+
+# Philosophical - ignore output folder
+Output/
