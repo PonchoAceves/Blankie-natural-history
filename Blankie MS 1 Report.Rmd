@@ -18,12 +18,16 @@ Document setup: Libraries and Data
 ```{r R Packages, message=FALSE}
 library(tidyverse)
 library(pavo)
+library(printr)
+library(DT)
 ```
 
 ## Natural history data
 
 ```{r}
-all <- read.csv("/Users/alfonsoaceves/Downloads/Corrected blankie all/all-surveys.csv", stringsAsFactors = F)
+all <- read.csv("Data/all-surveys.csv", stringsAsFactors = F)
+
+# datatable(all)
 ```
 
 ### Summaries: silk retreat and spider size
@@ -251,7 +255,7 @@ all2_f2 <- all2 %>%
 
 
 ```{r, include=T}
-# la buena?
+
 fig_2L <- ggplot(all2_f2) + 
   geom_point(size = 3, alpha = 0.4,  
              aes(new.SurveyName, BlankieLength, 
@@ -314,6 +318,86 @@ ggarrange(Fig_1, fig_2,
           ncol = 1, nrow = 2)
 ```
 
+#### 2 Way ANOVA
+
+```{r}
+norm.interval = function(data, variance = var(data, na.rm = T), conf.level = 0.95) {
+  z = qnorm((1 - conf.level)/2, lower.tail = FALSE)
+  xbar = mean(data, na.rm = T)
+  sdx = sqrt(variance/length(data))
+  c(xbar - z * sdx, xbar + z * sdx) 
+}
+```
+
+
+```{r}
+
+
+colours <- c("Occupied" = "#e7b453", "Vacant" = "#7aa6ea")
+# #e7b453 occupied TRUE
+# #7aa6ea occupied FALSE
+
+all4.1 <- all %>% 
+  mutate(log.B.Area = log10(BlankieArea), 
+         log.B.length = log10(BlankieLength)) %>% 
+  mutate(SurveyName = as.factor(SurveyName), 
+         occupied = as.factor(occupied)) %>% 
+  group_by(SurveyName, occupied) %>% 
+  summarise(mean=mean(log.B.length, na.rm = TRUE), 
+            ci.lwr= norm.interval(log.B.length)[1], 
+            ci.upr= norm.interval(log.B.length)[2], 
+            .groups = "rowwise")
+
+ggplot(all4.1, aes(x=SurveyName, y=mean)) +
+  geom_point(aes(x=SurveyName, y=mean, 
+                 color = "Occupied"), 
+             subset(all4.1, occupied == "TRUE"), 
+             size = 3, 
+             position = position_nudge(x = 0.1)) + 
+  geom_line(aes(x=SurveyName, y=mean, 
+                color = "Occupied"), 
+            subset(all4.1, occupied == "TRUE"), 
+            group = 1, 
+            size = 1, 
+            position = position_nudge(x = 0.1)) +
+  geom_errorbar(aes(x=SurveyName, y=mean, 
+                    color = "Occupied", 
+                    ymin=ci.lwr, ymax=ci.upr), 
+                subset(all4.1, occupied == "TRUE"), 
+                width=0.25, 
+                size=1, 
+                position = position_nudge(x = 0.1)) + 
+  geom_point(aes(x=SurveyName, y=mean, 
+                 color = "Vacant"), 
+             subset(all4.1, occupied == "FALSE"), 
+             size = 3, 
+             position = position_nudge(x = -0.1))+
+  geom_line(aes(x=SurveyName, y=mean, 
+                color = "Vacant"), 
+            subset(all4.1, occupied == "FALSE"), 
+            group = 1, 
+            size = 1, 
+            position = position_nudge(x = -0.1)) +
+  geom_errorbar(aes(x=SurveyName, y=mean, 
+                    color = "Vacant", 
+                    ymin=ci.lwr, ymax=ci.upr), 
+                subset(all4.1, occupied == "FALSE"), 
+                width=0.25, 
+                size=1, 
+                position = position_nudge(x = -0.1)) + 
+  ylab("Log (Retreat length mm)") + 
+  xlab("Survey time") +
+  scale_colour_manual(name="Occupancy",values=colours) +
+  theme_classic() +
+  theme(legend.position="bottom") +
+  theme(axis.title.x = element_text(size=18, face="bold", hjust = 0.5), 
+        axis.title.y = element_text(size=18, face="bold", hjust = 0.5), 
+        axis.text.x = element_text(size = 16), 
+        axis.text.y = element_text(size = 16), 
+        legend.text = element_text(size=16), 
+        legend.title = element_text(size=16))
+```
+
 
 ## Reflectance Spectra
 
@@ -324,10 +408,10 @@ Two datasets created here: 1) Clear data -  silk retreats collected from concret
 
 ## "check names = F", stops R from replacing the special characters in the names from the previously exported files
 
-c.specs <-read.csv("Data/specsClear.csv", check.names=FALSE)
+c.specs <-read.csv("Data/clean_specsClear.csv", check.names=FALSE)
 c.specs <-as.rspec(c.specs)
 
-d.specs <-read.csv("Data/specsBlankie.csv", check.names=FALSE)
+d.specs <-read.csv("Data/clean_specsBlankie.csv", check.names=FALSE)
 d.specs <-as.rspec(d.specs)
 
 ```
@@ -393,4 +477,66 @@ legend(500, 70,
        lwd = 2)
 ```
 
+## JAMOVI Stats report
 
+```{r}
+library(jmv)
+library(jmvcore)
+
+
+
+jmv::descriptives(
+  formula = Prosoma.width + BlankieLength ~ SurveyName,
+  data = all,
+  missing = FALSE,
+  median = FALSE,
+  sd = FALSE,
+  min = FALSE,
+  max = FALSE,
+  se = TRUE)
+
+
+### 2 Way ANOVA
+data <- all %>% 
+  filter(!is.na(BlankieLength)) %>% 
+  mutate(log.BlankieLength = log10(BlankieLength))
+
+jmv::ANOVA(
+  formula = log.BlankieLength ~ SurveyName + occupied + SurveyName:occupied,
+  data = data,
+  effectSize = "partEta",
+  homo = TRUE,
+  norm = TRUE,
+  postHoc = ~ SurveyName + occupied + SurveyName:occupied,
+  postHocES = "d",
+  emMeans = ~ SurveyName:occupied)
+rm(data)
+
+
+### 1 WAY ANOVA
+
+
+alljam <- 
+  all %>% 
+  mutate(fpID = str_split(BlankieID, "-", simplify = T)[ ,2], 
+         temporal = paste0("0", surveyId), 
+         newness = ifelse(fpID == temporal, "new", "old")) %>% 
+  filter(SurveyName != "2018-07", 
+         SurveyName != "2018-10") %>% 
+  filter(newness == "new") %>% 
+  mutate(log.BlankieLength = log10(BlankieLength)) %>% 
+  mutate(SurveyName = as.factor(SurveyName))
+
+
+jmv::anovaOneW(
+  formula = log.BlankieLength ~ SurveyName,
+  data = alljam,
+  descPlot = TRUE,
+  norm = TRUE,
+  eqv = TRUE,
+  phMethod = "tukey",
+  phFlag = TRUE)
+rm(alljam)
+
+
+```

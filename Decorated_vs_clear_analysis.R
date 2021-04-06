@@ -13,7 +13,7 @@ graphics.off()
 # Libraries ---------------------------------------------------------------
 
 library(pavo)
-library(plyr)
+library(tidyverse)
 library(dplyr)
 library(tibble)
 library(stringr)
@@ -21,7 +21,7 @@ library(stringr)
 # 01 Loading clear blankie data ----------------------------------------------
 
 ## collect all ".jaz" files from various subfolders
-c.specs <- getspec(where = "Data/SpecData Clear blankies", ext="jaz",subdir=T,subdir.names=T)
+c.specs <- getspec(where = "Data/Raw SpecData Clear blankies", ext="jaz",subdir=T,subdir.names=T)
 # plot(c.specs)
 ## optional check ups
 # is.rspec(specs)
@@ -52,12 +52,12 @@ explorespec(c.specs, by = sample, ylim = c(0, 100))
 # par(mfrow=c(1,2))
 # explorespec(specs, by = sample, ylim = c(0, 100))
 # dev.off()
-
+# Exists in Output
 
 # Loading decorated blankie data ------------------------------------------
 
 # collect all .jaz files from various subfolders
-d.specs <- getspec(where = "Data/SpecData Tree blankies", ext="jaz",subdir=T,subdir.names=T)
+d.specs <- getspec(where = "Data/Raw SpecData Tree blankies", ext="jaz",subdir=T,subdir.names=T)
 # plot(d.specs)
 head(d.specs)
 names(d.specs)
@@ -79,27 +79,29 @@ dev.off()
 # par(mfrow=c(1,2))
 # explorespec(tspecs, by = blankie, ylim = c(0, 100))
 # dev.off()
+# Exists in Output
+
 
 # Writing clean datasets to files -----------------------------------------
 # "c" for clear and "d" for decorated
 
-c.specs <- write.csv(c.specs, file = "Data/specsClear.csv", row.names = F)
-d.specs <- write.csv(d.specs, file = "Data/specsBlankie.csv", row.names = F)
-
+c.specs <- write.csv(c.specs, file = "Data/clean_specsClear.csv", row.names = F)
+d.specs <- write.csv(d.specs, file = "Data/clean_specsBlankie.csv", row.names = F)
+# Both exist in Data
 
 # 02 Loading data from exported csv files  -------------------------------
 
 ## "check names = F", stops R from replacing the special characters in the names from the previously exported files
 
-c.specs <-read.csv("Data/specsClear.csv", check.names=FALSE)
+c.specs <-read.csv("Data/clean_specsClear.csv", check.names=FALSE)
 c.specs <-as.rspec(c.specs)
-# is.rspec(specs)
+# is.rspec(c.specs)
 # names(specs)
 # check names = F, stops R from replacing the special characters in the names
 
-d.specs <-read.csv("Data/specsBlankie.csv", check.names=FALSE)
+d.specs <-read.csv("Data/clean_specsBlankie.csv", check.names=FALSE)
 d.specs <-as.rspec(d.specs)
-# is.rspec(tspecs)
+# is.rspec(d.specs)
 # names(tspecs)
 
 
@@ -223,6 +225,9 @@ legend(530, 70,
 # par(mfrow=c(1, 1))
 # aggplot(both, by = groups, alpha = 0.3, legend = TRUE)
 
+
+# NOT TO BE PUBLISHED -----------------------------------------------------
+# Below lies everything that is currently a failed attempt or exploration lines that are on hold until we are sure none of those test or functions will be included in any of the manuscripts
 
 # Comparison per wavelength chroma ----------------------------------------
 
