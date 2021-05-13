@@ -1,5 +1,14 @@
 # Removed pieces
 
+# reading our main all files
+all <- read.csv("Data/all-surveys.csv", stringsAsFactors = F)
+# all %>% kbl() %>% kable_classic() %>% scroll_box(width = "100%", height = "400px")
+
+# Removed columns
+# all %>% 
+#   select(-c(occu, collected, photoStart, photoEnd, fullLabel, Blankie.length, filename, BlankiePhotoFile, Group)) %>% 
+#   write_csv(file = "./Data/surveys.csv")
+
 # Figure 1 without N labels
 #### Without labels
 
@@ -67,6 +76,58 @@ fig_2 <- ggplot(all2) +
 fig_2
 # ggplot2::geom_vline(xintercept = 4.5, colour = "grey", lty = 2) +
 # ggplot2::geom_vline(xintercept = 6.4, colour = "black", lty = 2)
+
+
+# Full set of labels for figure 2B - these labels are not included in the submitted ms
+# This chunk creates all the labels for level of each factor (newness and occupancy)
+
+# optionally this code can create n values for each category
+
+n_labels_f2_newness.old <- all2 %>%
+  filter(!is.na(BlankieLength)) %>%
+  filter(newness == "old") %>% 
+  select(SurveyName, newness, occupied, BlankieLength) %>% 
+  group_by(SurveyName, newness) %>% 
+  count() %>% 
+  pull(n)
+n_labels_f2_newness.old <- c("0", n_labels_f2_newness.old)
+
+n_labels_f2_newness.new <- all2 %>%
+  filter(!is.na(BlankieLength)) %>%
+  filter(newness == "new") %>% 
+  select(SurveyName, newness, occupied, BlankieLength) %>% 
+  group_by(SurveyName, newness) %>% 
+  count() %>% 
+  pull(n)
+
+n_labels_f2_old_vacant <- all2 %>%
+  filter(!is.na(BlankieLength)) %>%
+  filter(newness == "old", occupied == "Vacant") %>% 
+  select(SurveyName, newness, occupied, BlankieLength) %>% 
+  group_by(SurveyName, newness, occupied) %>% 
+  count() %>% 
+  pull(n)
+n_labels_f2_old_vacant <- c("0", n_labels_f2_old_vacant)
+
+n_labels_f2_new_vacant <- all2 %>%
+  filter(!is.na(BlankieLength)) %>%
+  filter(newness == "new", occupied == "Vacant") %>% 
+  select(SurveyName, newness, occupied, BlankieLength) %>% 
+  group_by(SurveyName, newness, occupied) %>% 
+  count() %>% 
+  pull(n)
+n_labels_f2_new_vacant
+
+
+all2_fig2 <- all2 %>% 
+  mutate(SurveyName = factor(SurveyName)) %>% 
+  mutate(new.SurveyName = factor(SurveyName, labels = paste0(levels(SurveyName), "\n", "N = ", n_labels_f2_newness.old, ", ", n_labels_f2_newness.new, "\n", "Vacant = ", n_labels_f2_old_vacant, ", ", n_labels_f2_new_vacant)))
+
+
+
+
+###
+
 
 
 # Figure 3
