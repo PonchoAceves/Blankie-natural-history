@@ -1,17 +1,27 @@
 ---
-title: "Blankie MS 1 Report"
-output: 
+title: "R Notebook"
+output:
   html_document:
-    code_folding: "show"
-    toc: TRUE
-    toc_float: TRUE
-editor_options: 
+    df_print: paged
+editor_options:
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# Novel decorating behaviour of silk retreats in a challenging habitat
+
+**Authors:**
+
+Alfonso Aceves-Aparicio\*^1, 2^, Donald James McLean^1^, Zoe Korzy Wild^1^, Jutta M. Schneider^2^ and Marie E. Herberstein^1^
+
+1, Department of Biological Sciences, Macquarie University, Sydney, NSW, 2109, Australia
+
+2, Institute of Zoology, Universität Hamburg, Hamburg, Germany Corresponding author: Alfonso Aceves-Aparicio Correspondence: [bioarach\@gmail.com](mailto:bioarach@gmail.com){.email}
+
+This is the code used to extract velocity data and generate figures from the attacked sequences recorded as high speed video.
 
 Document setup: Libraries and Data
 
@@ -20,37 +30,74 @@ library(tidyverse)
 library(pavo)
 library(printr)
 library(DT)
+library(kableExtra)
+library(plotrix)
+library(cowplot)
+
+source("R/functions.R")
+```
+
+```{r}
+# getwd()
+# dir()
+# ls()
+# rm(list=ls())
 ```
 
 ## Natural history data
 
 ```{r}
 all <- read.csv("Data/all-surveys.csv", stringsAsFactors = F)
+# all %>% kbl() %>% kable_classic() %>% scroll_box(width = "100%", height = "400px")
 
-# datatable(all)
+```
+
+```{r}
+
+
+# all %>% 
+#   select(-c(occu, collected, photoStart, photoEnd, fullLabel, Blankie.length, filename, BlankiePhotoFile, Group)) %>% 
+#   write_csv(file = "./Data/surveys.csv")
+
+# occu
+# collected
+# photoStart
+# photoEnd
+# fullLabel
+# Blankie.length
+# filename
+# BlankiePhotoFile
+# Group
+
+all <- read_csv("Data/surveys.csv")
+
+all <- all %>% 
+  mutate(across(c(occupied, SurveyName), as_factor))
+
+
 ```
 
 ### Summaries: silk retreat and spider size
 
 ```{r}
-library(plotrix)
-library(kableExtra)
 
 retreat_summary <- all %>% 
   group_by(SurveyName) %>% 
   filter(!is.na(BlankieLength)) %>%
   summarise(N_retreat = n_distinct(BlankieID), 
-            Mean = mean(BlankieLength, na.rm = T),
+            Mean = mean(BlankieLength),
             SEM = std.error(BlankieLength))
-retreat_summary
+
+retreat_summary %>% 
+  kableExtra::kbl(align = "r") %>% 
+  kableExtra::kable_styling(bootstrap_options = "condensed")
 
 spider_summary <- all %>% 
   group_by(SurveyName) %>% 
   filter(!is.na(Prosoma.width)) %>% 
   summarise(N_spider = n(), 
-            Mean = mean(Prosoma.width, na.rm = T),
+            Mean = mean(Prosoma.width),
             SEM = std.error(Prosoma.width))
-spider_summary
 
 spider_summary %>% 
   kableExtra::kbl(align = "r") %>% 
@@ -58,55 +105,23 @@ spider_summary %>%
 
 
 ```
-### Theme for figures
-
-```{r include=FALSE}
-theme_poncho <- function() {
-  theme_classic() +
-  theme(axis.title.x = element_text(size=14, face="bold", hjust = 0.5), 
-        axis.title.y = element_text(size=14, face="bold", hjust = 0.5), 
-        axis.text.x = element_text(size = 12), 
-        axis.text.y = element_text(size = 12), 
-        legend.text = element_text(size=12), 
-        legend.position="top")
-}
-```
 
 ### Plot: Spider size over time
 
-#### Without labels
-```{r}
-Fig_1 <- all %>% 
-  select(SurveyName, Prosoma.width) %>% 
-  ggplot(aes(SurveyName, Prosoma.width)) +
-  geom_point(aes(group = SurveyName), 
-    position = position_jitter(width = 0.10), 
-    shape = 19, 
-    size = 3, 
-    alpha = 0.75,
-    colour = "#469eb4") +
-  stat_summary(fun = "mean", fun.min = "mean", fun.max= "mean", 
-               size= 0.7, colour= "#46b4af", 
-               geom = "errorbar", width=0.65) + 
-  ylab("Prosoma width (mm)") + 
-  xlab("") +
-  theme_poncho()
-
-Fig_1
-```
 #### With labels
 
 ```{r}
-n_labels_f1 <- spider_summary %>% pull(N_spider)
+n_labels_fig1 <- spider_summary %>% pull(N_spider)
 
-all_f1L <- all %>% 
-  mutate(SurveyName = factor(SurveyName)) %>% 
-  mutate(new.SurveyName = factor(surveyId, labels = paste0(levels(SurveyName), "\n", "N = ", n_labels_f1))) 
+all_fig1 <- all %>% 
+  mutate(new.SurveyName = factor(surveyId, labels = paste0(levels(SurveyName), "\n", "N = ", n_labels_fig1))) 
 ```
 
+#### Fig 1
 
-```{r}
-Fig_1L <- all_f1L %>% 
+```{r fig.height=4, fig.width=7}
+
+Fig_1L <- all_fig1 %>% 
   select(new.SurveyName, Prosoma.width) %>% 
   ggplot(aes(new.SurveyName, Prosoma.width)) +
   geom_point(aes(group = new.SurveyName), 
@@ -116,7 +131,7 @@ Fig_1L <- all_f1L %>%
     alpha = 0.75,
     colour = "#469eb4") +
   stat_summary(fun = "mean", fun.min = "mean", fun.max= "mean", 
-               size= 0.7, colour= "#46b4af", 
+               size= 0.7, colour= "#469eb4", alpha = 0.45,  
                geom = "errorbar", width=0.65) + 
   ylab("Prosoma width (mm)") + 
   xlab("") +
@@ -125,32 +140,21 @@ Fig_1L <- all_f1L %>%
 Fig_1L
 ```
 
-
-Table with the N for each survey
-
-```{r}
-all %>% 
-  select(SurveyName, Prosoma.width) %>%
-  filter(!is.na(Prosoma.width)) %>% 
-  group_by(SurveyName) %>%
-  summarise(n=n())  
-  # pull(n) # add pipe above to obtain n values as vector
-```
-
 ### Plot: Retreat building and occupancy over time
+
+Data preparation for the second plot Grabs the survey number from the BlankieID label (this label is given to the blankie when first recorded) checks whether it matches the surveyId (this corresponds to the survey date as categorical) to define if the blankie was new or old (pre-existing) in the current survey time. This trait is stored in the variable "newness"
 
 ```{r}
 all1 <- all %>% 
   mutate(fpID = str_split(BlankieID, "-", simplify = T)[ ,2], 
          temporal = paste0("0", surveyId), 
          newness = ifelse(fpID == temporal, "new", "old")) %>% 
-  mutate(newness = as_factor(newness)) %>% 
-  mutate(occupied = as_factor(occupied)) %>% 
-  mutate(SurveyName = as_factor(SurveyName)) %>% 
+  mutate(across(c(newness, occupied, SurveyName), as_factor)) %>% 
   mutate(occupied = fct_recode(occupied, Occupied = "TRUE", Vacant = "FALSE"))
-  
+
 ```
 
+Adding additional column where to store the combinations between Occupancy and "Newness"
 
 ```{r}
 # Data preparation for figure
@@ -160,57 +164,27 @@ all2 <- all1 %>%
   mutate(fourLplot = fct_relevel(fourLplot, "old_Occupied", "old_Vacant", "new_Occupied", "new_Vacant")) %>% 
   mutate(newness = fct_relevel(newness, "old", "new"))
 
-# Label containers
+# assigns shapes to each category
 shapes_plo1 <- c("old_Occupied" = 19, "old_Vacant" = 1, 
                  "new_Occupied" = 19, "new_Vacant" = 1)
 
-cols_plo1 <- c("old_Occupied" = "#4682b4", "old_Vacant" = "#4682b4", 
-                 "new_Occupied" = "#b4464b", "new_Vacant" = "#b4464b")
-```
-
-#### Without Labels
-
-```{r}
-# la buena?
-fig_2 <- ggplot(all2) + 
-  geom_point(size = 3, alpha = 0.4,  
-             aes(SurveyName, BlankieLength, 
-                 shape = fourLplot, 
-                 colour = fourLplot, 
-                 group = newness), 
-             position = position_jitterdodge(
-               jitter.width = 0.50, 
-               dodge.width = 0.6 
-             )) + 
-  stat_summary(aes(SurveyName, BlankieLength, group = newness), 
-               fun = "mean", fun.min = "mean", fun.max= "mean", 
-               size= 0.7, colour= "#469eb4", 
-               geom = "errorbar", width=0.65, 
-               position = position_dodge(width = 0.6)) +
-  scale_shape_manual(name="Retreat status", values=shapes_plo1, 
-                     labels = c(paste0("Pre-existing", "\n", "Occupied"), 
-                                 paste0("Pre-existing", "\n", "Vacant"), 
-                                 paste0("New", "\n", "Occupied"), 
-                                 paste0("New", "\n", "Vacant"))) + 
-  scale_colour_manual(name="Retreat status",
-                      values=cols_plo1, 
-                      labels = c(paste0("Pre-existing", "\n", "Occupied"), 
-                                 paste0("Pre-existing", "\n", "Vacant"), 
-                                 paste0("New", "\n", "Occupied"), 
-                                 paste0("New", "\n", "Vacant"))) + 
-  ylab("Retreat width (mm)") + 
-  xlab("Survey time") + 
-  theme_poncho() +
-  scale_x_discrete(expand = c(0,0.05))
-
-fig_2
+# assigns colours to each category
+cols_plo1 <- c("old_Occupied" = "#4682b4", 
+               "old_Vacant" = "#4682b4", 
+               "new_Occupied" = "#b4464b", 
+               "new_Vacant" = "#b4464b")
 ```
 
 #### With Labels
 
 N labels
 
-```{r}
+This chunk creates all the labels for level of each factor (newness and occupancy)
+
+```{r eval=FALSE, include=FALSE}
+
+# optionally this code can create n values for each category
+
 n_labels_f2_newness.old <- all2 %>%
   filter(!is.na(BlankieLength)) %>%
   filter(newness == "old") %>% 
@@ -247,17 +221,34 @@ n_labels_f2_new_vacant <- all2 %>%
 n_labels_f2_new_vacant
 
 
-all2_f2 <- all2 %>% 
+all2_fig2 <- all2 %>% 
   mutate(SurveyName = factor(SurveyName)) %>% 
-  mutate(new.SurveyName = factor(SurveyName, labels = paste0(levels(SurveyName), "\n", "N = ", n_labels_f2_newness.old, ", ", n_labels_f2_newness.new, 
-                                                             "\n", "Vacant = ", n_labels_f2_old_vacant, ", ", n_labels_f2_new_vacant)))
+  mutate(new.SurveyName = factor(SurveyName, labels = paste0(levels(SurveyName), "\n", "N = ", n_labels_f2_newness.old, ", ", n_labels_f2_newness.new, "\n", "Vacant = ", n_labels_f2_old_vacant, ", ", n_labels_f2_new_vacant)))
+
 ```
 
+Total N labels
 
-```{r, include=T}
+```{r}
+total_n_survey <- all2 %>%
+  filter(!is.na(BlankieLength)) %>%
+  select(SurveyName, newness) %>% 
+  group_by(SurveyName) %>% 
+  count() %>% 
+  pull(n)
 
-fig_2L <- ggplot(all2_f2) + 
-  geom_point(size = 3, alpha = 0.4,  
+# add the n label per survey under a line break to each survey name
+
+all2_fig2 <- all2 %>% 
+  mutate(new.SurveyName = factor(SurveyName, labels = paste0(levels(SurveyName), "\n", "N = ", total_n_survey)))
+```
+
+#### Fig 2L
+
+```{r fig.height=7, fig.width=7, include=T}
+
+fig_2L <- ggplot(all2_fig2) + 
+  geom_point(size = 4, alpha = 0.4,  
              aes(new.SurveyName, BlankieLength, 
                  shape = fourLplot, 
                  colour = fourLplot, 
@@ -266,76 +257,93 @@ fig_2L <- ggplot(all2_f2) +
                jitter.width = 0.50, 
                dodge.width = 0.6 
              )) + 
+  guides(color = guide_legend(override.aes = list(size = 7) ) ) +
+  
   stat_summary(aes(new.SurveyName, BlankieLength, group = newness), 
+               subset(all2_fig2, newness == "old"),
                fun = "mean", fun.min = "mean", fun.max= "mean", 
-               size= 0.7, colour= "#469eb4", 
-               geom = "errorbar", width=0.65, 
-               position = position_dodge(width = 0.6)) +
-  scale_shape_manual(name="Retreat status", values=shapes_plo1, 
+               size= 0.7, colour= "#4682b4", alpha = 0.80, 
+               geom = "errorbar", width=0.30, 
+               position = position_nudge(x = -0.15)) +
+  
+    stat_summary(aes(new.SurveyName, BlankieLength, group = newness), 
+               subset(all2_fig2, newness == "new"),
+               fun = "mean", fun.min = "mean", fun.max= "mean", 
+               size= 0.7, colour= "#b4464b", alpha = 0.80, 
+               geom = "errorbar", width=0.30, 
+               position = position_nudge(x = 0.15)) +
+
+  scale_shape_manual(name="", values=shapes_plo1, 
                      labels = c(paste0("Pre-existing", "\n", "Occupied"), 
                                  paste0("Pre-existing", "\n", "Vacant"), 
                                  paste0("New", "\n", "Occupied"), 
                                  paste0("New", "\n", "Vacant"))) + 
-  scale_colour_manual(name="Retreat status",
+  scale_colour_manual(name="",
                       values=cols_plo1, 
                       labels = c(paste0("Pre-existing", "\n", "Occupied"), 
                                  paste0("Pre-existing", "\n", "Vacant"), 
                                  paste0("New", "\n", "Occupied"), 
                                  paste0("New", "\n", "Vacant"))) + 
-  ylab("Retreat width (mm)") + 
-  xlab("Survey time") + 
+  labs(y = "Retreat length (mm)", x = "Survey time") +
   theme_poncho() +
+  theme(plot.caption = element_text(size = 10, hjust = 0)) +
   scale_x_discrete(expand = c(0,0.05))
+  
+# adding arrows to indicate presence of adult spiders during survey 
+fig_2L <- fig_2L + 
+  theme(legend.position = c(0.5, 1.05),
+        legend.direction = "horizontal",
+        plot.margin=unit(c(2,1,1.5,1.2),"cm")) +
+  annotate("segment", x = 6, xend = 6, y = 35, yend = 32,
+           colour = "black", size = 1, arrow = arrow()) +
+  annotate("segment", x = 2, xend = 2, y = 28, yend = 25,
+           colour = "black", size = 1, arrow = arrow())
 
 fig_2L
 
 ```
 
+Summary, number of records in each category in the plot
+
 ```{r}
 all2 %>% 
   select(SurveyName, newness, occupied, BlankieLength) %>% 
-  group_by(SurveyName, newness
-           # , occupied
-           ) %>% 
+  group_by(SurveyName, newness, occupied) %>% 
   count() %>% 
-  pull(n)
-
-
-all2 %>% 
-  select(SurveyName, newness, occupied, BlankieLength) %>% 
-  group_by(SurveyName, occupied) %>% 
-  count() %>% 
-  pull(n)
+  kableExtra::kbl(align = "r") %>% 
+  kableExtra::kable_styling(c("striped", "hover")) %>% 
+  scroll_box(width = "100%", height = "400px")
 ```
 
 #### Composite Fig 2
 
-```{r warning=T, fig.widtht=7, fig.heigth=7}
-library(ggpubr)
+```{r warning=T, fig.widtht=7, fig.heigth=11}
 
-ggarrange(Fig_1, fig_2,
-          labels = c("A", "B"),
-          ncol = 1, nrow = 2)
+figure_2 <- plot_grid(Fig_1L, fig_2L, ncol=1, align="v", labels = "AUTO", rel_heights = c(1, 2))
+
+```
+
+```{r fig.height=9, fig.width=7}
+figure_2
+```
+
+```{r eval=FALSE, include=FALSE}
+figure_2_margins <- figure_2 +
+  theme(plot.margin = unit(c(2.5, 2.5, 2.5, 2.5), "cm"))
+
+# figure_2
+# figure_2_margins
+ 
+# ggsave2(filename = "Figure2margins.pdf", plot = figure_2_margins, device = "pdf", path = "./Output", height = 9, units = "in", dpi = 300 )
 ```
 
 #### 2 Way ANOVA
 
-```{r}
-norm.interval = function(data, variance = var(data, na.rm = T), conf.level = 0.95) {
-  z = qnorm((1 - conf.level)/2, lower.tail = FALSE)
-  xbar = mean(data, na.rm = T)
-  sdx = sqrt(variance/length(data))
-  c(xbar - z * sdx, xbar + z * sdx) 
-}
-```
-
+Data preparation for figure 3
 
 ```{r}
 
-
-colours <- c("Occupied" = "#e7b453", "Vacant" = "#7aa6ea")
-# #e7b453 occupied TRUE
-# #7aa6ea occupied FALSE
+colours <- c("Occupied" = "#b4464b", "Vacant" = "#4682b4")
 
 all4.1 <- all %>% 
   mutate(log.B.Area = log10(BlankieArea), 
@@ -347,19 +355,16 @@ all4.1 <- all %>%
             ci.lwr= norm.interval(log.B.length)[1], 
             ci.upr= norm.interval(log.B.length)[2], 
             .groups = "rowwise")
+```
 
-ggplot(all4.1, aes(x=SurveyName, y=mean)) +
+```{r}
+figure_3 <- ggplot(all4.1, aes(x=SurveyName, y=mean)) +
   geom_point(aes(x=SurveyName, y=mean, 
                  color = "Occupied"), 
              subset(all4.1, occupied == "TRUE"), 
              size = 3, 
              position = position_nudge(x = 0.1)) + 
-  geom_line(aes(x=SurveyName, y=mean, 
-                color = "Occupied"), 
-            subset(all4.1, occupied == "TRUE"), 
-            group = 1, 
-            size = 1, 
-            position = position_nudge(x = 0.1)) +
+  guides(color = guide_legend(override.aes = list(size = 4) ) ) +
   geom_errorbar(aes(x=SurveyName, y=mean, 
                     color = "Occupied", 
                     ymin=ci.lwr, ymax=ci.upr), 
@@ -371,13 +376,7 @@ ggplot(all4.1, aes(x=SurveyName, y=mean)) +
                  color = "Vacant"), 
              subset(all4.1, occupied == "FALSE"), 
              size = 3, 
-             position = position_nudge(x = -0.1))+
-  geom_line(aes(x=SurveyName, y=mean, 
-                color = "Vacant"), 
-            subset(all4.1, occupied == "FALSE"), 
-            group = 1, 
-            size = 1, 
-            position = position_nudge(x = -0.1)) +
+             position = position_nudge(x = -0.1)) +
   geom_errorbar(aes(x=SurveyName, y=mean, 
                     color = "Vacant", 
                     ymin=ci.lwr, ymax=ci.upr), 
@@ -387,23 +386,21 @@ ggplot(all4.1, aes(x=SurveyName, y=mean)) +
                 position = position_nudge(x = -0.1)) + 
   ylab("Log (Retreat length mm)") + 
   xlab("Survey time") +
-  scale_colour_manual(name="Occupancy",values=colours) +
-  theme_classic() +
-  theme(legend.position="bottom") +
-  theme(axis.title.x = element_text(size=18, face="bold", hjust = 0.5), 
-        axis.title.y = element_text(size=18, face="bold", hjust = 0.5), 
-        axis.text.x = element_text(size = 16), 
-        axis.text.y = element_text(size = 16), 
-        legend.text = element_text(size=16), 
-        legend.title = element_text(size=16))
-```
+  scale_colour_manual(name=NULL,values=colours) +
+  theme_poncho() +
+  theme(legend.position=c(0.5, 0.95), legend.direction = "horizontal")
 
+figure_3
+# ggsave2(filename = "figure3.pdf", plot = figure_3, device = "pdf", path = "./Output", width = 7, units = "in", dpi = 300)
+
+```
 
 ## Reflectance Spectra
 
-Two datasets created here: 1) Clear data -  silk retreats collected from concrete water tank, 2) decorated silk, collected from trees.
+Two datasets created here: 1) Clear data - silk retreats collected from concrete water tank, 2) decorated silk, collected from trees.
 
 ### Loading data
+
 ```{r}
 
 ## "check names = F", stops R from replacing the special characters in the names from the previously exported files
@@ -477,24 +474,42 @@ legend(500, 70,
        lwd = 2)
 ```
 
-## JAMOVI Stats report
+### Tidyverse way
 
 ```{r}
-library(jmv)
-library(jmvcore)
 
+colour_spec_type <- c("clear" = "red", "debri" = "steelblue")
 
+both %>% 
+  rowwise(wl) %>% 
+  mutate(mean_clear = mean(c_across(contains("Sample"))),
+         sdv_clear = sd(c_across(contains("Sample")))) %>% 
+  mutate(mean_debri = mean(c_across(contains("blankie"))),
+         sdv_debri = sd(c_across(contains("blankie")))) %>% 
+  ggplot(aes(x = wl)) +
+  geom_ribbon(aes(ymin = mean_clear-sdv_clear, ymax = mean_clear+sdv_clear), 
+              fill = "red",
+              alpha = 0.2) +
+  geom_line(aes(y = mean_clear, colour = "clear")) + 
+  geom_ribbon(aes(ymin = mean_debri-sdv_debri, ymax = mean_debri+sdv_debri), 
+              fill = "steelblue",
+              alpha = 0.2) +
+  geom_line(aes(y = mean_debri, colour = "debri")) +
+  expand_limits(y = c(10, 60)) + 
+  scale_y_continuous(n.breaks = 10) +
+  labs(x = "Wavelength (nm)", y = "Reflectance (%)") +
+  scale_colour_manual(name="Silk type", values = colour_spec_type,
+                      labels = c("Clear", "With debris")) +
+  theme_poncho() 
 
-jmv::descriptives(
-  formula = Prosoma.width + BlankieLength ~ SurveyName,
-  data = all,
-  missing = FALSE,
-  median = FALSE,
-  sd = FALSE,
-  min = FALSE,
-  max = FALSE,
-  se = TRUE)
+# ggsave(filename = "clear_vs_debris.pdf", device = "pdf", path = "./Output", width = 7, height = 5)
+  
 
+```
+
+## Stats report
+
+```{r}
 
 ### 2 Way ANOVA
 data <- all %>% 
@@ -509,13 +524,13 @@ jmv::ANOVA(
   norm = TRUE,
   postHoc = ~ SurveyName + occupied + SurveyName:occupied,
   postHocES = "d",
-  emMeans = ~ SurveyName:occupied)
+  emMeans = ~ SurveyName:occupied,
+  emmPlots = FALSE,
+  emmTables = TRUE)
 rm(data)
 
 
 ### 1 WAY ANOVA
-
-
 alljam <- 
   all %>% 
   mutate(fpID = str_split(BlankieID, "-", simplify = T)[ ,2], 
@@ -525,7 +540,7 @@ alljam <-
          SurveyName != "2018-10") %>% 
   filter(newness == "new") %>% 
   mutate(log.BlankieLength = log10(BlankieLength)) %>% 
-  mutate(SurveyName = as.factor(SurveyName))
+  mutate(SurveyName = as.character(SurveyName))
 
 
 jmv::anovaOneW(
@@ -537,6 +552,5 @@ jmv::anovaOneW(
   phMethod = "tukey",
   phFlag = TRUE)
 rm(alljam)
-
 
 ```
