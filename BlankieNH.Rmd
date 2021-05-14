@@ -257,6 +257,9 @@ Summary, number of records in each category in the plot
 ```{r}
 all2 %>% 
   dplyr::select(SurveyName, newness, occupied, BlankieLength) %>% 
+  mutate(newness = fct_recode(newness, 
+                              "Pre-existing" = "old",
+                              "New" = "new")) %>% 
   group_by(SurveyName, newness, occupied) %>% 
   count() %>% 
   kableExtra::kbl(align = "r") %>% 
