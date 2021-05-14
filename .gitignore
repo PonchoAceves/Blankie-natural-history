@@ -43,3 +43,6 @@ vignettes/*.pdf
 
 # Philosophical - ignore output folder
 Output/
+
+# Obsolete versions 
+Data local/
