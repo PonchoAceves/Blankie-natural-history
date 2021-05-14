@@ -48,4 +48,4 @@ Output/
 Data local/
 
 # R notebook files created by R markdown
-*nb.html
+*.nb.html
