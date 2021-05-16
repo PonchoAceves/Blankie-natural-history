@@ -11,6 +11,7 @@ Alfonso Aceves-Aparicio\*^1, 2^, Donald James McLean^1^, Zoe Korzy Wild^1^, Jut
 Corresponding author: Alfonso Aceves-Aparicio Correspondence: [bioarach\@gmail.com](mailto:bioarach@gmail.com)
 
    
+[![DOI]([https://zenodo.org/badge/354425741.svg)](https://zenodo.org/badge/latestdoi/354425741)](https://zenodo.org/badge/354425741.svg)](https://zenodo.org/badge/latestdoi/354425741))
 
 This repository contains the data and code used to generate stats and figures  
    
