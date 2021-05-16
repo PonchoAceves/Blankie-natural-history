@@ -6,7 +6,7 @@ output:
     toc: TRUE
     toc_float: TRUE
     df_print: paged
-    code_download: true
+    code_download: TRUE
   html_notebook: 
     toc: yes
     toc_float: TRUE
